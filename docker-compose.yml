@@ -3,6 +3,27 @@
 # Start with TLS: docker compose --profile tls up
 # Start with AI: docker compose --profile ai up
 # Start with monitoring: docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up
+#
+# ── Service Discovery ──────────────────────────────────────────────────────
+# All services communicate over the `2108trade` bridge network. Docker
+# Compose DNS resolves service names to container IPs automatically:
+#
+#   Service      Internal Hostname     Port
+#   ───────────  ────────────────────  ────
+#   postgres     postgres              5432
+#   redis        redis                 6379
+#   minio        minio                 9000
+#   web          web                   3000
+#   landing      landing               3000
+#   worker       worker                (no exposed port)
+#   quant        quant                 8002
+#   ai-service   ai-service            8001
+#   ollama       ollama                11434
+#
+# Example: The web app connects to Redis at `redis://redis:6379`
+# and to PostgreSQL at `postgresql://...@postgres:5432/...`.
+#
+# External clients connect via published ports (host:container mapping).
 
 services:
   # ── Landing page (public-facing marketing site) ──────────────────────
@@ -31,7 +52,35 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-2108trade}:${POSTGRES_PASSWORD:-2108trade}@postgres:5432/${POSTGRES_DB:-2108trade}
       - REDIS_URL=redis://redis:6379
       - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT:-minio}
+      - MINIO_PORT=${MINIO_PORT:-9000}
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - 2108trade
+
+  # ── Background Worker (BullMQ job processor) ─────────────────────────
+  worker:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    entrypoint: ["bun", "run", "apps/web/src/worker.ts"]
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-2108trade}:${POSTGRES_PASSWORD:-2108trade}@postgres:5432/${POSTGRES_DB:-2108trade}
+      - REDIS_URL=redis://redis:6379
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT:-minio}
+      - MINIO_PORT=${MINIO_PORT:-9000}
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
     depends_on:
       postgres:
         condition: service_healthy
@@ -73,6 +122,27 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - 2108trade
+
+  # ── MinIO (S3-compatible object storage) ─────────────────────────────
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     networks:
       - 2108trade
 
@@ -166,6 +236,8 @@ volumes:
   postgres_data:
     driver: local
   redis_data:
+    driver: local
+  minio_data:
     driver: local
   ollama_data:
     driver: local
