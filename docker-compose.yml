@@ -74,12 +74,18 @@ services:
     networks:
       - 2108trade
 
-  # ── AI Service (placeholder — coming soon) ───────────────────────────
+  # ── AI Service ────────────────────────────────────────────────────────
   ai-service:
-    image: busybox:1.36
-    command: ["sh", "-c", "echo 'AI service placeholder — not yet implemented' && tail -f /dev/null"]
+    build:
+      context: ./services/ai
+      dockerfile: Dockerfile
     ports:
       - "${AI_SERVICE_PORT:-8001}:8001"
+    restart: unless-stopped
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.1:8b}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
     profiles:
       - ai
       - full
