@@ -74,6 +74,19 @@ services:
     networks:
       - 2108trade
 
+  # ── Quant Service ───────────────────────────────────────────────────────
+  quant:
+    build:
+      context: ./services/quant
+      dockerfile: Dockerfile
+    ports:
+      - "${QUANT_SERVICE_PORT:-8002}:8002"
+    restart: unless-stopped
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    networks:
+      - 2108trade
+
   # ── AI Service ────────────────────────────────────────────────────────
   ai-service:
     build:
