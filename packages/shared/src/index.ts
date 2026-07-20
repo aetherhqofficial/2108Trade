@@ -99,3 +99,108 @@ export const PRICING_FEATURES = [
   "Paper trading & historical backtesting",
   "Priority support & community access",
 ];
+
+// ── Broker types ──
+
+export type BrokerCategory = "Crypto" | "Stocks & ETFs" | "Forex";
+
+export interface SupportedBroker {
+  id: string;
+  name: string;
+  category: BrokerCategory;
+  description: string;
+}
+
+export const SUPPORTED_BROKERS: SupportedBroker[] = [
+  // Crypto
+  {
+    id: "binance",
+    name: "Binance",
+    category: "Crypto",
+    description: "World's largest crypto exchange by volume",
+  },
+  {
+    id: "coinbase",
+    name: "Coinbase",
+    category: "Crypto",
+    description: "Most trusted US-based crypto exchange",
+  },
+  {
+    id: "kraken",
+    name: "Kraken",
+    category: "Crypto",
+    description: "Security-first exchange with margin & futures",
+  },
+  {
+    id: "bybit",
+    name: "Bybit",
+    category: "Crypto",
+    description: "Professional derivatives & spot trading",
+  },
+  {
+    id: "okx",
+    name: "OKX",
+    category: "Crypto",
+    description: "Global exchange with deep liquidity",
+  },
+  // Stocks & ETFs
+  {
+    id: "interactive-brokers",
+    name: "Interactive Brokers",
+    category: "Stocks & ETFs",
+    description: "Professional-grade multi-asset brokerage",
+  },
+  {
+    id: "alpaca",
+    name: "Alpaca",
+    category: "Stocks & ETFs",
+    description: "Commission-free API-first stock trading",
+  },
+  {
+    id: "tradestation",
+    name: "TradeStation",
+    category: "Stocks & ETFs",
+    description: "Advanced trading platform for active traders",
+  },
+  // Forex
+  {
+    id: "oanda",
+    name: "OANDA",
+    category: "Forex",
+    description: "Trusted forex broker since 1996",
+  },
+  {
+    id: "forex-com",
+    name: "FOREX.com",
+    category: "Forex",
+    description: "Leading US forex broker, GAIN Capital",
+  },
+];
+
+export interface BrokerConnection {
+  id: string;
+  brokerName: string;
+  status: "active" | "inactive" | "error" | "pending";
+  createdAt: string;
+  lastSyncAt?: string;
+}
+
+export interface BrokerAccountCard {
+  id: string;
+  brokerName: string;
+  accountValue: number;
+  dailyChange: number;
+  dailyChangePct: number;
+  positionsCount: number;
+  status: "active" | "inactive" | "error" | "pending";
+  lastSyncAt?: string;
+}
+
+export function getBrokerCategory(id: string): BrokerCategory {
+  const broker = SUPPORTED_BROKERS.find((b) => b.id === id);
+  return broker?.category ?? "Crypto";
+}
+
+export function getBrokerByName(name: string): SupportedBroker | undefined {
+  return SUPPORTED_BROKERS.find((b) => b.name === name);
+}
