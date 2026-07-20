@@ -4,3 +4,4 @@ export { portfolios, positions } from "./portfolios";
 export { trades, tradeActionEnum, tradeStatusEnum } from "./trades";
 export { riskLimits } from "./risk-limits";
 export { sessions } from "./sessions";
+export { paperAccounts } from "./paper-accounts";

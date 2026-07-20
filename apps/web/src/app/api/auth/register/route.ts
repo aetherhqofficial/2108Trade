@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { users, userProfiles, riskLimits, portfolios } from "@/db/schema";
+import { users, userProfiles, riskLimits, portfolios, paperAccounts } from "@/db/schema";
 import { hashPassword } from "@/lib/password";
 import { eq } from "drizzle-orm";
-import { signIn } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
@@ -40,12 +39,13 @@ export async function POST(request: Request) {
 
     const passwordHash = await hashPassword(password);
 
-    // Create user, profile, risk limits, and portfolio in a transaction
+    // Create user, profile, risk limits, portfolio, and paper account
     const [newUser] = await db
       .insert(users)
       .values({
         email: normalizedEmail,
         passwordHash,
+        onboardingCompleted: false,
       })
       .returning();
 
@@ -64,6 +64,14 @@ export async function POST(request: Request) {
       userId: newUser.id,
       totalValue: 0,
       cashBalance: 0,
+    });
+
+    // Auto-create paper trading account with $10,000
+    await db.insert(paperAccounts).values({
+      userId: newUser.id,
+      balance: 10000,
+      initialBalance: 10000,
+      isActive: true,
     });
 
     return NextResponse.json(

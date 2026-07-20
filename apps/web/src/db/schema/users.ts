@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, real, text, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, real, text, pgEnum, boolean } from "drizzle-orm/pg-core";
 
 export const experienceLevelEnum = pgEnum("experience_level", [
   "beginner",
@@ -20,6 +20,7 @@ export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   passwordHash: varchar("password_hash", { length: 255 }).notNull(),
+  onboardingCompleted: boolean("onboarding_completed").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
