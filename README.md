@@ -1,17 +1,21 @@
-# 2108Trade — Open-Source AI Trading Platform
+# 2108Trade — Professional AI Trading Platform
 
-**The Future of Intelligent Investing.** 2108Trade is an open-source AI trading platform that makes sophisticated investing accessible to everyone. Connect your brokerage accounts, set risk parameters, and let the AI analyze markets, execute trades, and monitor positions — with full transparency into the code and the AI's reasoning.
+**The Future of Intelligent Investing.** 2108Trade is a professional AI trading platform that gives you an intelligent investment team working 24/7. Connect your brokerage accounts, set risk parameters, and let the AI analyze markets, execute trades, and monitor positions — with full transparency into every decision.
 
 ## 🚀 Features
 
-- **AI Advisor** — Get intelligent market analysis and trade recommendations
-- **Autonomous Trading** — Let the AI execute trades based on your risk profile
-- **Risk Management** — Set custom stop-losses, position limits, and exposure caps
-- **Multi-Market Support** — Stocks, ETFs, Forex, Crypto, Commodities, Indices
-- **Self-Hostable** — Run on your own infrastructure with full data sovereignty
-- **100% Open Source** — AGPL licensed. Every feature, every market, free forever
+- **AI-Powered Analysis** — Get intelligent market analysis and trade recommendations
+- **Smart Automation** — Let the AI execute trades based on your risk profile
+- **Intelligent Risk Controls** — Set custom stop-losses, position limits, and exposure caps
+- **Global Markets** — Stocks, ETFs, Forex, Crypto, Commodities, Indices
+- **Portfolio Analytics** — Track performance and get actionable insights
+- **Trade Explanations** — Every AI decision is fully explained
 
-## 📦 Quick Start
+## 💰 Pricing
+
+One plan, everything included: **$8/month** with a 7-day free trial. No hidden fees.
+
+## 📦 Development
 
 ```bash
 # Clone the repository
@@ -39,20 +43,14 @@ bun run dev
 │   └── landing/      # Marketing landing page
 ├── packages/
 │   └── shared/       # Shared types, utilities, and constants
-└── docs/             # Documentation site
+├── services/         # Backend microservices
+└── docs/             # Documentation
 ```
-
-## 🤝 Contributing
-
-We welcome contributions! See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
 
 ## 📄 License
 
-2108Trade is licensed under the [GNU Affero General Public License v3.0](LICENSE).
+2108Trade is proprietary software. See [LICENSE](LICENSE) for details.
 
 ## 🔗 Links
 
-- [Documentation](https://docs.2108trade.com)
-- [GitHub](https://github.com/aetherhqofficial/2108Trade)
 - [Website](https://2108trade.com)
-

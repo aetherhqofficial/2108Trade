@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "2108Trade — AI Trading Platform",
-  description: "Open-source AI trading platform.",
+  description: "Professional AI trading platform with intelligent automation and risk controls.",
 };
 
 export default function RootLayout({

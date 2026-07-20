@@ -4,11 +4,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "2108Trade — The Future of Intelligent Investing",
   description:
-    "Open-source AI trading platform. Connect your brokerage, set risk parameters, and let AI trade for you — with full transparency.",
+    "Professional AI trading platform. Connect your brokerage, set risk parameters, and let AI trade for you — with full transparency. $8/month.",
   openGraph: {
     title: "2108Trade — The Future of Intelligent Investing",
     description:
-      "Open-source AI trading platform. Self-hostable, community-driven, and never paywalled.",
+      "Professional AI trading platform with intelligent automation, risk controls, and complete transparency. Start your 7-day free trial — only $8/month.",
     url: "https://2108trade.com",
     siteName: "2108Trade",
     type: "website",

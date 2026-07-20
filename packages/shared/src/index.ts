@@ -15,45 +15,45 @@ export interface Feature {
 export const FEATURES: Feature[] = [
   {
     id: "ai-advisor",
-    title: "AI Advisor",
+    title: "AI-Powered Analysis",
     description:
-      "Get intelligent market analysis and trade recommendations powered by advanced AI models.",
+      "Get intelligent market analysis and trade recommendations powered by advanced AI models that learn from market data.",
     icon: "brain",
   },
   {
     id: "autonomous-trading",
-    title: "Autonomous Trading",
+    title: "Smart Automation",
     description:
-      "Let the AI execute trades automatically based on your configured risk profile and strategy.",
+      "Let the AI execute trades automatically based on your configured risk profile and trading strategy — 24/7.",
     icon: "bot",
   },
   {
     id: "risk-management",
-    title: "Risk Management",
+    title: "Intelligent Risk Controls",
     description:
-      "Set custom stop-losses, position limits, and exposure caps to protect your portfolio.",
+      "Set custom stop-losses, position limits, and exposure caps with real-time portfolio protection.",
     icon: "shield",
   },
   {
     id: "multi-market",
-    title: "Multi-Market Support",
+    title: "Global Markets",
     description:
-      "Trade across Stocks, ETFs, Forex, Crypto, Commodities, and Indices from one platform.",
+      "Trade across Stocks, ETFs, Forex, Crypto, Commodities, and Indices from a single unified platform.",
     icon: "globe",
   },
   {
-    id: "open-source",
-    title: "100% Open Source",
+    id: "portfolio-analytics",
+    title: "Portfolio Analytics",
     description:
-      "AGPL licensed. Inspect the code, audit the AI, and contribute back to the community.",
-    icon: "code",
+      "Track performance, visualize returns, and get actionable insights with professional-grade portfolio tools.",
+    icon: "chart",
   },
   {
-    id: "self-host",
-    title: "Self-Hostable",
+    id: "trade-explanations",
+    title: "Trade Explanations",
     description:
-      "Run on your own infrastructure with full data sovereignty. No vendor lock-in, ever.",
-    icon: "server",
+      "Every AI decision is fully explained — understand the reasoning behind every trade recommendation.",
+    icon: "search",
   },
 ];
 
