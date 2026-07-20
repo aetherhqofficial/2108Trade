@@ -5,8 +5,29 @@ import { users } from "@/db/schema";
 import { verifyPassword } from "@/lib/password";
 import { eq } from "drizzle-orm";
 
+const DEV_DEFAULT_SECRET = "dev-secret-change-in-production-2108trade";
+
+function getAuthSecret(): string {
+  const secret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
+
+  if (!secret) {
+    throw new Error(
+      "NEXTAUTH_SECRET is required but not set. Generate one with: openssl rand -base64 32",
+    );
+  }
+
+  if (secret === DEV_DEFAULT_SECRET) {
+    throw new Error(
+      "NEXTAUTH_SECRET is set to the dev default value, which is insecure. " +
+        "Generate a proper secret with: openssl rand -base64 32",
+    );
+  }
+
+  return secret;
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
+  secret: getAuthSecret(),
   providers: [
     Credentials({
       name: "credentials",
