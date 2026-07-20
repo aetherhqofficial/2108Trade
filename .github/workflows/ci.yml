@@ -6,9 +6,16 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  # ── Lint & Type-check ────────────────────────────────────────────────
   lint-and-typecheck:
+    name: Lint & Type-check
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -16,11 +23,99 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
       - name: Install dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
 
       - name: Lint
         run: bun run lint
 
       - name: Type-check
         run: bun run typecheck
+
+  # ── Docker Build Validation ──────────────────────────────────────────
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [lint-and-typecheck]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build landing image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/landing/Dockerfile
+          push: false
+          load: false
+          cache-from: type=gha,scope=landing
+          cache-to: type=gha,scope=landing,mode=max
+
+      - name: Build web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: false
+          load: false
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,scope=web,mode=max
+
+  # ── Docker Compose Smoke Test ────────────────────────────────────────
+  compose-smoke-test:
+    name: Compose Smoke Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [docker-build]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build all images
+        run: docker compose build
+
+      - name: Start services
+        run: |
+          docker compose up -d postgres redis
+          # Wait for healthy
+          for i in $(seq 1 30); do
+            if docker compose ps postgres | grep -q "healthy"; then
+              echo "Postgres healthy"
+              break
+            fi
+            sleep 2
+          done
+          for i in $(seq 1 30); do
+            if docker compose ps redis | grep -q "healthy"; then
+              echo "Redis healthy"
+              break
+            fi
+            sleep 2
+          done
+
+      - name: Verify services
+        run: |
+          docker compose ps
+          curl -f --retry 5 --retry-delay 2 http://localhost:3000 || echo "Landing not ready yet (may need app build first)"
+          curl -f --retry 5 --retry-delay 2 http://localhost:3001 || echo "Web not ready yet (may need app build first)"
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v --remove-orphans

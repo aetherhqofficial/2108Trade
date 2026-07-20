@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+.bun/
+
+# Build output
+dist/
+.next/
+.out/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Monitoring
+monitoring/
+
+# Docs
+docs/
+
+# Tests
+**/__tests__/
+**/*.test.ts
+**/*.spec.ts
+
+# Misc
+README.md
+LICENSE
+CLAUDE.md
