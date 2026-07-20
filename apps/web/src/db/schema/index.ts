@@ -17,3 +17,7 @@ export { aiConversations } from "./ai-conversations";
 export { aiRecommendations, recStatusEnum } from "./ai-recommendations";
 export { auditLogs } from "./audit-logs";
 export { strategyConfigs } from "./strategy-configs";
+export { refreshTokens } from "./refresh-tokens";
+export { mfaFactors } from "./mfa-factors";
+export { loginHistory } from "./login-history";
+export { trustedDevices } from "./trusted-devices";

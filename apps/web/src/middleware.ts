@@ -5,6 +5,7 @@ import {
   getRateLimitConfig,
   getClientIP,
 } from "@/lib/rate-limit";
+import { validateCSRFToken, CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "@/lib/csrf";
 
 /**
  * Security headers applied to all responses.
@@ -29,14 +30,33 @@ function applySecurityHeaders(response: NextResponse): NextResponse {
 }
 
 /**
+ * Public auth endpoints that don't require authentication.
+ */
+const PUBLIC_AUTH_ENDPOINTS = [
+  "/api/auth/register",
+  "/api/auth/login",
+  "/api/auth/forgot-password",
+  "/api/auth/reset-password",
+  "/api/auth/session",
+  "/api/auth/callback",
+  "/api/auth/csrf",
+  "/api/auth/providers",
+  "/api/auth/refresh",
+  "/api/auth/mfa/challenge",
+  "/api/auth/mfa/verify-challenge",
+];
+
+/**
  * Protected API routes middleware.
  * - Applies rate limiting to all /api/* routes
  * - Applies security headers to all responses
+ * - CSRF validation on state-changing requests (POST/PUT/DELETE)
  * - Ensures only authenticated users can access /api/* routes
  *   except for auth endpoints and internal endpoints.
  */
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+export async function middleware(request: NextRequest) {
+  const { pathname, searchParams } = request.nextUrl;
+  const method = request.method;
 
   // ── Rate Limiting (all API routes) ──────────────────────────────────
   const { config, namespace } = getRateLimitConfig(pathname);
@@ -52,17 +72,28 @@ export function middleware(request: NextRequest) {
     return applySecurityHeaders(response);
   }
 
+  // ── CSRF Protection (state-changing requests) ───────────────────────
+  // Skip CSRF for public auth endpoints and GET/HEAD/OPTIONS
+  const isPublicAuth = PUBLIC_AUTH_ENDPOINTS.some((ep) =>
+    pathname.startsWith(ep),
+  );
+  const isStateChanging = ["POST", "PUT", "DELETE", "PATCH"].includes(method);
+
+  if (isStateChanging && !isPublicAuth) {
+    const cookieToken = request.cookies.get(CSRF_COOKIE_NAME)?.value;
+    const headerToken = request.headers.get(CSRF_HEADER_NAME);
+    if (!validateCSRFToken(cookieToken, headerToken)) {
+      return applySecurityHeaders(
+        NextResponse.json(
+          { error: "Invalid CSRF token" },
+          { status: 403 },
+        ),
+      );
+    }
+  }
+
   // ── Public Auth Endpoints ───────────────────────────────────────────
-  if (
-    pathname.startsWith("/api/auth/register") ||
-    pathname.startsWith("/api/auth/login") ||
-    pathname.startsWith("/api/auth/forgot-password") ||
-    pathname.startsWith("/api/auth/reset-password") ||
-    pathname.startsWith("/api/auth/session") ||
-    pathname.startsWith("/api/auth/callback") ||
-    pathname.startsWith("/api/auth/csrf") ||
-    pathname.startsWith("/api/auth/providers")
-  ) {
+  if (isPublicAuth) {
     return applySecurityHeaders(NextResponse.next());
   }
 
