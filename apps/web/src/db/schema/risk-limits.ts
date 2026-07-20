@@ -1,4 +1,4 @@
-import { pgTable, uuid, real, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, uuid, real, boolean, timestamp } from "drizzle-orm/pg-core";
 import { users } from "./users";
 
 export const riskLimits = pgTable("risk_limits", {
@@ -11,6 +11,8 @@ export const riskLimits = pgTable("risk_limits", {
   maxDailyLossPct: real("max_daily_loss_pct").default(5).notNull(),
   maxDrawdownPct: real("max_drawdown_pct").default(20).notNull(),
   maxExposurePct: real("max_exposure_pct").default(50).notNull(),
+  emergencyStop: boolean("emergency_stop").default(false).notNull(),
+  tradingPaused: boolean("trading_paused").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

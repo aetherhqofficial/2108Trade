@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import type { BrokerConnection, BrokerAccountCard } from "@2108trade/shared";
+import { PortfolioHealthScore } from "@/components/PortfolioHealthScore";
 
 // ── Mock account data (until real portfolio API is wired) ──
 const MOCK_ACCOUNTS: BrokerAccountCard[] = [
@@ -72,19 +73,43 @@ function SummaryCard({
 
 // ── Account Card ──
 
-function AccountCard({ account }: { account: BrokerAccountCard }) {
+function AccountCard({
+  account,
+  isPaper = false,
+}: {
+  account: BrokerAccountCard;
+  isPaper?: boolean;
+}) {
   return (
     <div className="rounded-2xl border border-gray-800 bg-gray-900/40 p-5 transition-all hover:border-amber-500/20">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-amber-500/10 text-xs font-bold text-amber-400 ring-1 ring-inset ring-amber-500/20">
-            {account.brokerName.slice(0, 2).toUpperCase()}
+          <span
+            className={`flex size-8 items-center justify-center rounded-lg text-xs font-bold ring-1 ring-inset ${
+              isPaper
+                ? "bg-blue-500/10 text-blue-400 ring-blue-500/20"
+                : "bg-amber-500/10 text-amber-400 ring-amber-500/20"
+            }`}
+          >
+            {isPaper ? "📝" : account.brokerName.slice(0, 2).toUpperCase()}
           </span>
-          <span className="text-sm font-semibold">{account.brokerName}</span>
+          <span className="text-sm font-semibold">
+            {account.brokerName}
+          </span>
         </div>
-        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
-          <span className="size-1 rounded-full bg-emerald-400" />
-          Connected
+        <span
+          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+            isPaper
+              ? "bg-blue-500/10 text-blue-400"
+              : "bg-emerald-500/10 text-emerald-400"
+          }`}
+        >
+          <span
+            className={`size-1 rounded-full ${
+              isPaper ? "bg-blue-400" : "bg-emerald-400"
+            }`}
+          />
+          {isPaper ? "Paper" : "Connected"}
         </span>
       </div>
       <div className="space-y-1.5">
@@ -109,6 +134,59 @@ function AccountCard({ account }: { account: BrokerAccountCard }) {
           <span className="text-sm font-medium text-gray-300">
             {account.positionsCount}
           </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Paper Account Card ──
+
+function PaperAccountCard({
+  balance,
+  initialBalance,
+}: {
+  balance: number;
+  initialBalance: number;
+}) {
+  const gain = balance - initialBalance;
+  const gainPct = (gain / initialBalance) * 100;
+  const isPositive = gain >= 0;
+
+  return (
+    <div className="rounded-2xl border border-blue-500/20 bg-blue-500/[0.02] p-5 transition-all hover:border-blue-500/30">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="flex size-8 items-center justify-center rounded-lg bg-blue-500/10 text-sm font-bold text-blue-400 ring-1 ring-inset ring-blue-500/20">
+            📝
+          </span>
+          <span className="text-sm font-semibold">Paper Trading</span>
+        </div>
+        <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-medium text-blue-400">
+          <span className="size-1 rounded-full bg-blue-400" />
+          Practice
+        </span>
+      </div>
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-gray-500">Virtual Balance</span>
+          <span className="text-sm font-semibold font-mono text-blue-400">
+            {fmtCurrency(balance)}
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-gray-500">Gain/Loss</span>
+          <span
+            className={`text-sm font-medium font-mono ${
+              isPositive ? "text-emerald-400" : "text-red-400"
+            }`}
+          >
+            {fmtCurrency(gain)} ({isPositive ? "+" : ""}{gainPct.toFixed(2)}%)
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-gray-500">Risk-Free</span>
+          <span className="text-xs text-gray-500">No real money at stake</span>
         </div>
       </div>
     </div>
@@ -141,8 +219,13 @@ function OnboardingCard() {
 export default function Dashboard() {
   const [connections, setConnections] = useState<BrokerConnection[]>([]);
   const [loading, setLoading] = useState(true);
+  const [paperBalance, setPaperBalance] = useState<number | null>(null);
+  const [paperInitial, setPaperInitial] = useState<number>(10000);
+  const [userName, setUserName] = useState("Investor");
+  const [onboardingNeeded, setOnboardingNeeded] = useState(false);
 
   useEffect(() => {
+    // Fetch broker connections
     fetch("/api/brokers")
       .then((res) => {
         if (res.ok) return res.json();
@@ -153,10 +236,46 @@ export default function Dashboard() {
         // API not available yet — use mock
       })
       .finally(() => setLoading(false));
+
+    // Fetch paper account
+    fetch("/api/paper/account")
+      .then((res) => {
+        if (res.ok) return res.json();
+        throw new Error("Not available");
+      })
+      .then((data) => {
+        if (data.paperAccount) {
+          setPaperBalance(data.paperAccount.balance);
+          setPaperInitial(data.paperAccount.initialBalance);
+        }
+      })
+      .catch(() => {});
+
+    // Fetch session for user name
+    fetch("/api/auth/session")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user?.email) {
+          setUserName(data.user.email.split("@")[0]);
+        }
+      })
+      .catch(() => {});
+
+    // Check onboarding status
+    fetch("/api/user/onboarding")
+      .then((res) => {
+        if (res.ok) return res.json();
+        throw new Error("Not available");
+      })
+      .then((data) => {
+        if (!data.onboardingCompleted) {
+          setOnboardingNeeded(true);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const hasConnections = connections.length > 0;
-  // Use mock accounts for display when API isn't wired
   const accounts: BrokerAccountCard[] = hasConnections
     ? connections.map((c) => ({
         id: c.id,
@@ -180,11 +299,34 @@ export default function Dashboard() {
 
   return (
     <div>
+      {/* Onboarding redirect notice */}
+      {onboardingNeeded && (
+        <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/[0.05] p-4">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">👋</span>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-amber-400">
+                Complete your setup in 2 minutes
+              </p>
+              <p className="text-xs text-amber-400/70">
+                Set your risk comfort and goals so we can personalize your experience.
+              </p>
+            </div>
+            <Link
+              href="/onboarding"
+              className="rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-gray-950 hover:bg-amber-400 transition-colors"
+            >
+              Set Up →
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Welcome + Market Mood */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Good morning, <span className="text-amber-400">John</span>
+            Good morning, <span className="text-amber-400">{userName}</span>
           </h1>
           <p className="mt-1 text-sm text-gray-400">
             Here&apos;s your market briefing for today.
@@ -219,12 +361,21 @@ export default function Dashboard() {
           change={`Across ${accounts.length} account${accounts.length !== 1 ? "s" : ""}`}
           changeType="neutral"
         />
-        <SummaryCard
-          label="AI Confidence Score"
-          value="82%"
-          change="Strong signal clarity"
-          changeType="positive"
-        />
+        {paperBalance !== null ? (
+          <SummaryCard
+            label="Paper Trading Balance"
+            value={fmtCurrency(paperBalance)}
+            change="Virtual — practice risk-free"
+            changeType="neutral"
+          />
+        ) : (
+          <SummaryCard
+            label="AI Confidence Score"
+            value="82%"
+            change="Strong signal clarity"
+            changeType="positive"
+          />
+        )}
       </div>
 
       {/* Connected Accounts Section */}
@@ -241,6 +392,16 @@ export default function Dashboard() {
             Add Broker
           </Link>
         </div>
+
+        {/* Paper Trading Account */}
+        {paperBalance !== null && (
+          <div className="mb-4">
+            <PaperAccountCard
+              balance={paperBalance}
+              initialBalance={paperInitial}
+            />
+          </div>
+        )}
 
         {showOnboarding ? (
           <OnboardingCard />
@@ -387,6 +548,9 @@ export default function Dashboard() {
 
         {/* Right sidebar */}
         <div className="space-y-6">
+          {/* Portfolio Health Score */}
+          <PortfolioHealthScore />
+
           {/* Quick Actions */}
           <div className="rounded-2xl border border-gray-800 bg-gray-900/40 p-6">
             <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-500 mb-4">
@@ -410,26 +574,45 @@ export default function Dashboard() {
                   desc: "Practice without risk",
                 },
                 {
-                  label: "Market Scan",
-                  icon: "🔍",
-                  desc: "AI scans for opportunities",
+                  label: "Risk Settings",
+                  icon: "🛡️",
+                  desc: "Configure your safety limits",
+                  href: "/settings/risk",
                 },
-              ].map((action) => (
-                <button
-                  key={action.label}
-                  className="flex w-full items-center gap-4 rounded-xl border border-gray-800 bg-gray-950/50 p-4 text-left transition-all hover:border-amber-500/30 hover:bg-gray-900 cursor-pointer"
-                >
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-gray-800 text-lg">
-                    {action.icon}
-                  </span>
-                  <div>
-                    <p className="text-sm font-medium text-gray-200">
-                      {action.label}
-                    </p>
-                    <p className="text-xs text-gray-500">{action.desc}</p>
-                  </div>
-                </button>
-              ))}
+              ].map((action) =>
+                "href" in action && action.href ? (
+                  <Link
+                    key={action.label}
+                    href={action.href}
+                    className="flex w-full items-center gap-4 rounded-xl border border-gray-800 bg-gray-950/50 p-4 text-left transition-all hover:border-amber-500/30 hover:bg-gray-900"
+                  >
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-gray-800 text-lg">
+                      {action.icon}
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium text-gray-200">
+                        {action.label}
+                      </p>
+                      <p className="text-xs text-gray-500">{action.desc}</p>
+                    </div>
+                  </Link>
+                ) : (
+                  <button
+                    key={action.label}
+                    className="flex w-full items-center gap-4 rounded-xl border border-gray-800 bg-gray-950/50 p-4 text-left transition-all hover:border-amber-500/30 hover:bg-gray-900 cursor-pointer"
+                  >
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-gray-800 text-lg">
+                      {action.icon}
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium text-gray-200">
+                        {action.label}
+                      </p>
+                      <p className="text-xs text-gray-500">{action.desc}</p>
+                    </div>
+                  </button>
+                ),
+              )}
             </div>
           </div>
 
