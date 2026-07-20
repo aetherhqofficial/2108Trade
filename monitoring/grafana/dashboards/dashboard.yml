@@ -1,0 +1,14 @@
+# 2108Trade Grafana dashboard provisioning
+apiVersion: 1
+
+providers:
+  - name: "2108Trade"
+    orgId: 1
+    folder: ""
+    type: file
+    disableDeletion: true
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: true

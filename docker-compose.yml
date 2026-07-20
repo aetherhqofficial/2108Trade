@@ -1,0 +1,113 @@
+# 2108Trade — Local development and production deployment
+# Start everything: docker compose up
+# Start with monitoring: docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up
+
+services:
+  # ── Landing page (public-facing marketing site) ──────────────────────
+  landing:
+    build:
+      context: .
+      dockerfile: apps/landing/Dockerfile
+    ports:
+      - "${LANDING_PORT:-3000}:3000"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+    networks:
+      - 2108trade
+
+  # ── Web app (main platform) ──────────────────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - "${WEB_PORT:-3001}:3000"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-2108trade}:${POSTGRES_PASSWORD:-2108trade}@postgres:5432/${POSTGRES_DB:-2108trade}
+      - REDIS_URL=redis://redis:6379
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - 2108trade
+
+  # ── PostgreSQL ───────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-2108trade}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-2108trade}
+      POSTGRES_DB: ${POSTGRES_DB:-2108trade}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-2108trade} -d ${POSTGRES_DB:-2108trade}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - 2108trade
+
+  # ── Redis ────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - 2108trade
+
+  # ── AI Service (placeholder — coming soon) ───────────────────────────
+  ai-service:
+    image: busybox:1.36
+    command: ["sh", "-c", "echo 'AI service placeholder — not yet implemented' && tail -f /dev/null"]
+    ports:
+      - "${AI_SERVICE_PORT:-8001}:8001"
+    profiles:
+      - ai
+      - full
+    networks:
+      - 2108trade
+
+  # ── Ollama (placeholder — coming soon) ───────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    profiles:
+      - ai
+      - full
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - 2108trade
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  ollama_data:
+    driver: local
+
+networks:
+  2108trade:
+    driver: bridge
+    name: 2108trade
