@@ -8,18 +8,16 @@ Defines the StateGraph with 4 agents running serially:
 4. Explanation Agent → END
 
 Agents communicate exclusively through AgentState — no direct calls.
-Uses SqliteSaver for checkpointing (single-file, no external DB needed).
+Uses MemorySaver for checkpointing (in-memory, per-deployment).
 """
 
 from __future__ import annotations
 
 import logging
-import sqlite3
 import time
-from pathlib import Path
 from typing import Optional
 
-from langgraph.checkpoint.sqlite import SqliteSaver
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 
 from .agents.explanation import explanation_agent
@@ -31,22 +29,13 @@ from .state import AgentState, AnalyzeRequest, AnalyzeResponse, PipelineStatus
 logger = logging.getLogger(__name__)
 
 
-def build_pipeline(checkpoint_db: Optional[str] = None) -> StateGraph:
+def build_pipeline() -> StateGraph:
     """
     Build and compile the LangGraph StateGraph for the AI pipeline.
-
-    Args:
-        checkpoint_db: Path to SQLite checkpoint file.
-                       Defaults to {DATA_DIR}/checkpoints.db (or ./data/checkpoints.db).
 
     Returns:
         A compiled StateGraph ready for invocation.
     """
-    if checkpoint_db is None:
-        data_dir = Path("data")
-        data_dir.mkdir(exist_ok=True)
-        checkpoint_db = str(data_dir / "checkpoints.db")
-
     # ── Create the graph ────────────────────────────────────────────────
     workflow = StateGraph(AgentState)
 
@@ -76,12 +65,11 @@ def build_pipeline(checkpoint_db: Optional[str] = None) -> StateGraph:
     workflow.add_edge("explanation", END)
 
     # ── Compile with checkpointing ──────────────────────────────────────
-    conn = sqlite3.connect(checkpoint_db, check_same_thread=False)
-    checkpointer = SqliteSaver(conn)
+    checkpointer = MemorySaver()
 
     compiled = workflow.compile(checkpointer=checkpointer)
 
-    logger.info(f"Pipeline compiled with checkpointing at {checkpoint_db}")
+    logger.info("Pipeline compiled with in-memory checkpointing")
     return compiled
 
 
