@@ -167,6 +167,10 @@ class AgentState(TypedDict, total=False):
     data_sources: list[str]
     user_profile: dict[str, Any]
 
+    # Optional injected data (market data, portfolio snapshot)
+    market_data: dict[str, Any]
+    portfolio: dict[str, Any]
+
     # Pipeline outputs (populated by each agent in sequence)
     market_assessment: Optional[MarketAssessment]
     candidates: list[TradeCandidate]
