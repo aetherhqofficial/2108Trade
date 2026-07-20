@@ -1,9 +1,8 @@
 // 2108Trade shared package — types, utilities, and constants
 
 export const APP_NAME = "2108Trade";
-export const APP_TAGLINE = "The Future of Intelligent Investing";
+export const APP_TAGLINE = "Your AI Investment Team, Working 24/7";
 export const GITHUB_URL = "https://github.com/aetherhqofficial/2108Trade";
-export const DOCS_URL = "https://docs.2108trade.com";
 
 export interface Feature {
   id: string;
@@ -14,46 +13,46 @@ export interface Feature {
 
 export const FEATURES: Feature[] = [
   {
-    id: "ai-advisor",
-    title: "AI-Powered Analysis",
+    id: "ai-companion",
+    title: "AI Market Companion",
     description:
-      "Get intelligent market analysis and trade recommendations powered by advanced AI models that learn from market data.",
+      "Ask anything about markets in plain English. Get answers you actually understand — no jargon, no confusion.",
     icon: "brain",
   },
   {
-    id: "autonomous-trading",
-    title: "Smart Automation",
+    id: "trade-explanations",
+    title: "Smart Trade Explanations",
     description:
-      "Let the AI execute trades automatically based on your configured risk profile and trading strategy — 24/7.",
-    icon: "bot",
+      "Every recommendation comes with the why — what the AI noticed, the risks, the reasoning behind every move.",
+    icon: "search",
   },
   {
-    id: "risk-management",
-    title: "Intelligent Risk Controls",
+    id: "market-health",
+    title: "Market Health Dashboard",
     description:
-      "Set custom stop-losses, position limits, and exposure caps with real-time portfolio protection.",
-    icon: "shield",
-  },
-  {
-    id: "multi-market",
-    title: "Global Markets",
-    description:
-      "Trade across Stocks, ETFs, Forex, Crypto, Commodities, and Indices from a single unified platform.",
-    icon: "globe",
-  },
-  {
-    id: "portfolio-analytics",
-    title: "Portfolio Analytics",
-    description:
-      "Track performance, visualize returns, and get actionable insights with professional-grade portfolio tools.",
+      "One glance tells you everything: market mood, volatility, risk level. No complex charts required to understand what's happening.",
     icon: "chart",
   },
   {
-    id: "trade-explanations",
-    title: "Trade Explanations",
+    id: "risk-controls",
+    title: "Intelligent Risk Controls",
     description:
-      "Every AI decision is fully explained — understand the reasoning behind every trade recommendation.",
-    icon: "search",
+      "You set the limits. The AI stays within them. Always. Custom stop-losses, position limits, and exposure caps that protect your portfolio.",
+    icon: "shield",
+  },
+  {
+    id: "learn-while-investing",
+    title: "Learn While You Invest",
+    description:
+      "Every trade is a lesson. The platform explains stop-losses, diversification, and risk management as you go — so you become a better investor.",
+    icon: "bot",
+  },
+  {
+    id: "multi-market",
+    title: "Multi-Market Coverage",
+    description:
+      "Stocks, ETFs, Forex, Crypto, Commodities, Indices — all from one place. One platform, every market you care about.",
+    icon: "globe",
   },
 ];
 
@@ -70,16 +69,33 @@ export const STEPS = [
   {
     step: 1,
     title: "Connect",
-    description: "Link your brokerage or exchange accounts securely via API.",
+    description: "Link your brokerage securely — we support major brokers and exchanges.",
   },
   {
     step: 2,
-    title: "Configure",
-    description: "Set your risk parameters, trading preferences, and AI autonomy level.",
+    title: "Personalize",
+    description: "Set your goals, risk comfort, and preferences. The AI adapts to you, not the other way around.",
   },
   {
     step: 3,
-    title: "Trade",
-    description: "Let the AI monitor markets, analyze opportunities, and execute trades 24/7.",
+    title: "Grow",
+    description: "Let AI handle the analysis while you learn and earn. Every trade comes with a clear explanation.",
   },
+];
+
+export const MARKET_MOODS = [
+  { mood: "Bullish", emoji: "😊", color: "emerald" },
+  { mood: "Neutral", emoji: "😐", color: "amber" },
+  { mood: "Bearish", emoji: "☹️", color: "red" },
+] as const;
+
+export const PRICING_FEATURES = [
+  "AI market analysis & trade explanations",
+  "Intelligent risk management engine",
+  "Portfolio analytics & performance tracking",
+  "All markets — Stocks, ETFs, Forex, Crypto, Commodities, Indices",
+  "All strategies — from conservative to aggressive",
+  "Multi-broker support & secure API connections",
+  "Paper trading & historical backtesting",
+  "Priority support & community access",
 ];
