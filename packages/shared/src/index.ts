@@ -204,3 +204,6 @@ export function getBrokerCategory(id: string): BrokerCategory {
 export function getBrokerByName(name: string): SupportedBroker | undefined {
   return SUPPORTED_BROKERS.find((b) => b.name === name);
 }
+
+// ── Broker Integration Framework ──
+export * from "./broker";
