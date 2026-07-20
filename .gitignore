@@ -25,3 +25,5 @@ Thumbs.db
 
 # Logs
 *.log
+backups/*.sql.gz
+__pycache__/
