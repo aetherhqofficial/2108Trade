@@ -47,9 +47,55 @@ bun run dev
 └── docs/             # Documentation
 ```
 
+## 🐳 Docker Deployment
+
+```bash
+# Start all core services
+docker compose up -d
+
+# Start with TLS (requires certs in nginx/certs/)
+docker compose --profile tls up -d
+
+# Start with AI services
+docker compose --profile ai up -d
+
+# Start everything
+docker compose --profile full up -d
+```
+
+## 💾 Backup & Restore
+
+### Automated Backups
+The `backup-cron` container runs daily at 2:00 AM UTC, storing gzipped dumps
+in the `backup_data` Docker volume. Keeps last 7 daily + last 4 weekly backups.
+
+### Manual Backup
+```bash
+# With Docker Compose stack running:
+docker compose exec backup-cron /usr/local/bin/backup.sh
+
+# Or from host:
+DB_HOST=localhost DB_USER=2108trade DB_NAME=2108trade DB_PASSWORD=<pw> ./scripts/backup.sh
+```
+
+### Restore
+```bash
+# Copy backup from volume
+docker compose cp backup-cron:/backups/2108trade_YYYY-MM-DD_HHMMSS.sql.gz ./restore.sql.gz
+
+# Restore (interactive — confirms before dropping)
+DB_HOST=localhost DB_USER=2108trade DB_NAME=2108trade DB_PASSWORD=<pw> \
+  ./scripts/restore.sh ./restore.sql.gz
+
+# Or non-interactive (for CI/automation)
+./scripts/restore.sh ./restore.sql.gz --force
+```
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for full production deployment guide.
+
 ## 📄 License
 
-2108Trade is proprietary software. See [LICENSE](LICENSE) for details.
+2108Trade is open-source software licensed under the GNU Affero General Public License v3.0 (AGPL-3.0). See [LICENSE](LICENSE) for details.
 
 ## 🔗 Links
 
