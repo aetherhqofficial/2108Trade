@@ -35,6 +35,12 @@ scrape_configs:
       - targets: ["ai-service:8001"]
     scrape_interval: 30s
 
+  # PostgreSQL metrics
+  - job_name: "postgres-exporter"
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
+    scrape_interval: 30s
+
   # Prometheus self-monitoring
   - job_name: "prometheus"
     static_configs:
