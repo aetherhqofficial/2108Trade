@@ -4,14 +4,15 @@ global:
   evaluation_interval: 15s
   scrape_timeout: 10s
 
-# Alertmanager (placeholder — configure when alerting rules are added)
-# alerting:
-#   alertmanagers:
-#     - static_configs:
-#         - targets: []
+# Alertmanager
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
 
-# Rule files (placeholder — add alerting rules here)
-# rule_files: []
+# Rule files
+rule_files:
+  - "alert-rules.yml"
 
 scrape_configs:
   # Landing page metrics
