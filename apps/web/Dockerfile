@@ -39,6 +39,8 @@ COPY --from=builder /app/apps/web/src/lib/storage.ts ./apps/web/src/lib/storage.
 COPY --from=builder /app/apps/web/tsconfig.json ./apps/web/tsconfig.json
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
+COPY apps/web/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -46,4 +48,4 @@ ENV PORT=3000
 
 EXPOSE 3000
 
-CMD ["bun", "run", "apps/web/server.js"]
+ENTRYPOINT ["/app/entrypoint.sh"]
