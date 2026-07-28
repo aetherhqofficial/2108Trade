@@ -45,6 +45,25 @@ const PUBLIC_AUTH_ENDPOINTS = [
   "/api/auth/mfa/challenge",
   "/api/auth/mfa/verify-challenge",
 ];
+ * Log request details with method, path, status, duration, and client IP.
+ */
+function logRequest(
+  method: string,
+  path: string,
+  status: number,
+  durationMs: number,
+  ip: string,
+): void {
+  console.log(
+    JSON.stringify({
+      method,
+      path,
+      status,
+      duration_ms: durationMs,
+      ip,
+    }),
+  );
+}
 
 /**
  * Protected API routes middleware.
@@ -53,18 +72,23 @@ const PUBLIC_AUTH_ENDPOINTS = [
  * - CSRF validation on state-changing requests (POST/PUT/DELETE)
  * - Ensures only authenticated users can access /api/* routes
  *   except for auth endpoints and internal endpoints.
+ * - Logs request method, path, status, duration, and client IP.
  */
 export async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   const method = request.method;
+export function middleware(request: NextRequest) {
+  const start = Date.now();
+  const { pathname } = request.nextUrl;
 
   // ── Rate Limiting (all API routes) ──────────────────────────────────
   const { config, namespace } = getRateLimitConfig(pathname);
   const clientIP = getClientIP(request);
   const { allowed, retryAfter } = checkRateLimit(clientIP, namespace, config);
+  let response: NextResponse;
 
   if (!allowed) {
-    const response = NextResponse.json(
+    response = NextResponse.json(
       { error: "Too many requests. Please try again later." },
       { status: 429 },
     );
@@ -96,24 +120,48 @@ export async function middleware(request: NextRequest) {
   if (isPublicAuth) {
     return applySecurityHeaders(NextResponse.next());
   }
+  } else if (
+    // ── Public Auth Endpoints ─────────────────────────────────────────
+    pathname.startsWith("/api/auth/register") ||
+    pathname.startsWith("/api/auth/login") ||
+    pathname.startsWith("/api/auth/forgot-password") ||
+    pathname.startsWith("/api/auth/reset-password") ||
+    pathname.startsWith("/api/auth/session") ||
+    pathname.startsWith("/api/auth/callback") ||
+    pathname.startsWith("/api/auth/csrf") ||
+    pathname.startsWith("/api/auth/providers")
+  ) {
+    response = NextResponse.next();
+  } else if (
+    // ── Internal Service Endpoints ────────────────────────────────────
+    pathname.startsWith("/api/internal/")
+  ) {
+    response = NextResponse.next();
+  } else {
+    // ── Protected Routes ──────────────────────────────────────────────
+    const sessionCookie =
+      request.cookies.get("authjs.session-token") ??
+      request.cookies.get("__Secure-authjs.session-token");
 
-  // ── Internal Service Endpoints ──────────────────────────────────────
-  if (pathname.startsWith("/api/internal/")) {
-    return applySecurityHeaders(NextResponse.next());
+    if (!sessionCookie) {
+      response = NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 },
+      );
+    } else {
+      response = NextResponse.next();
+    }
   }
 
-  // ── Protected Routes ────────────────────────────────────────────────
-  const sessionCookie =
-    request.cookies.get("authjs.session-token") ??
-    request.cookies.get("__Secure-authjs.session-token");
+  logRequest(
+    request.method,
+    pathname,
+    response.status,
+    Date.now() - start,
+    clientIP,
+  );
 
-  if (!sessionCookie) {
-    return applySecurityHeaders(
-      NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
-    );
-  }
-
-  return applySecurityHeaders(NextResponse.next());
+  return applySecurityHeaders(response);
 }
 
 export const config = {

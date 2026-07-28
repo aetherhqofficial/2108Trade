@@ -4,14 +4,15 @@ global:
   evaluation_interval: 15s
   scrape_timeout: 10s
 
-# Alertmanager (placeholder — configure when alerting rules are added)
-# alerting:
-#   alertmanagers:
-#     - static_configs:
-#         - targets: []
+# Alertmanager
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
 
-# Rule files (placeholder — add alerting rules here)
-# rule_files: []
+# Rule files
+rule_files:
+  - "alert-rules.yml"
 
 scrape_configs:
   # Landing page metrics
@@ -33,6 +34,12 @@ scrape_configs:
     metrics_path: /metrics
     static_configs:
       - targets: ["ai-service:8001"]
+    scrape_interval: 30s
+
+  # PostgreSQL metrics
+  - job_name: "postgres-exporter"
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
     scrape_interval: 30s
 
   # Prometheus self-monitoring
