@@ -9,13 +9,16 @@ Defines the StateGraph with 4 agents running serially:
 
 Agents communicate exclusively through AgentState — no direct calls.
 Uses MemorySaver for checkpointing (in-memory, per-deployment).
+
+Each agent is instrumented with per-agent latency tracking via a timing
+wrapper that logs elapsed time and stores timing in AgentState.agent_timings.
 """
 
 from __future__ import annotations
 
 import logging
 import time
-from typing import Optional
+from typing import Any, Awaitable, Callable, Optional
 
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
@@ -28,6 +31,36 @@ from .state import AgentState, AnalyzeRequest, AnalyzeResponse, PipelineStatus
 
 logger = logging.getLogger(__name__)
 
+# ── Per-agent timing wrapper ─────────────────────────────────────────────
+
+
+def _make_timed_node(
+    agent_name: str,
+    agent_fn: Callable[[AgentState], Awaitable[dict[str, Any]]],
+) -> Callable[[AgentState], Awaitable[dict[str, Any]]]:
+    """
+    Wrap an agent node function with per-agent latency tracking.
+
+    Times the invocation, logs at INFO level, and stores the elapsed time
+    in the returned state update under ``agent_timings``.
+    """
+
+    async def timed_node(state: AgentState) -> dict[str, Any]:
+        start = time.monotonic()
+        result = await agent_fn(state)
+        elapsed_ms = (time.monotonic() - start) * 1000
+
+        logger.info(f"Agent {agent_name}: {elapsed_ms:.0f}ms")
+
+        # Merge timing into existing agent_timings
+        existing_timings: dict[str, float] = dict(state.get("agent_timings", {}))
+        existing_timings[agent_name] = elapsed_ms
+        result["agent_timings"] = existing_timings
+
+        return result
+
+    return timed_node
+
 
 def build_pipeline() -> StateGraph:
     """
@@ -39,11 +72,23 @@ def build_pipeline() -> StateGraph:
     # ── Create the graph ────────────────────────────────────────────────
     workflow = StateGraph(AgentState)
 
-    # ── Add nodes ───────────────────────────────────────────────────────
-    workflow.add_node("market_analysis", market_analysis_agent)
-    workflow.add_node("strategy", strategy_agent)
-    workflow.add_node("risk", risk_agent)
-    workflow.add_node("explanation", explanation_agent)
+    # ── Add nodes (wrapped with per-agent timing) ───────────────────────
+    workflow.add_node(
+        "market_analysis",
+        _make_timed_node("market_analysis", market_analysis_agent),
+    )
+    workflow.add_node(
+        "strategy",
+        _make_timed_node("strategy", strategy_agent),
+    )
+    workflow.add_node(
+        "risk",
+        _make_timed_node("risk", risk_agent),
+    )
+    workflow.add_node(
+        "explanation",
+        _make_timed_node("explanation", explanation_agent),
+    )
 
     # ── Define edges ────────────────────────────────────────────────────
     # Entry point: Market Analysis first
@@ -138,9 +183,13 @@ async def run_analysis(request: AnalyzeRequest) -> AnalyzeResponse:
 
     logger.info(f"Pipeline complete: id={analysis_id}, elapsed={elapsed_ms:.0f}ms, model={model_used}")
 
+    # Collect per-agent timings
+    agent_timings: dict[str, float] = final_state.get("agent_timings", {})
+
     return AnalyzeResponse(
         analysis_id=analysis_id,
         recommendation=recommendation,
         processing_time_ms=round(elapsed_ms, 2),
         model_used=model_used,
+        agent_timings=agent_timings,
     )

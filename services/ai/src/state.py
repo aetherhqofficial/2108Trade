@@ -126,6 +126,10 @@ class AnalyzeResponse(BaseModel):
     recommendation: TradeRecommendation
     processing_time_ms: float
     model_used: str
+    agent_timings: dict[str, float] = Field(
+        default_factory=dict,
+        description="Per-agent latency in milliseconds (agent_name → ms)",
+    )
 
 
 class FeedbackRequest(BaseModel):
@@ -176,6 +180,9 @@ class AgentState(TypedDict, total=False):
     candidates: list[TradeCandidate]
     risk_report: Optional[RiskValidationReport]
     recommendation: Optional[TradeRecommendation]
+
+    # Per-agent timing (populated by each agent)
+    agent_timings: dict[str, float]
 
     # Control
     status: PipelineStatus
