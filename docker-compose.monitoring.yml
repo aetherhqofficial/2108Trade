@@ -20,6 +20,20 @@ services:
     networks:
       - 2108trade
 
+  # ── PostgreSQL Exporter ──────────────────────────────────────────────
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.15.0
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER:-2108trade}:${POSTGRES_PASSWORD:-2108trade}@postgres:5432/${POSTGRES_DB:-2108trade}?sslmode=disable"
+    ports:
+      - "9187:9187"
+    networks:
+      - 2108trade
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
   # ── Grafana ──────────────────────────────────────────────────────────
   grafana:
     image: grafana/grafana:11.2.0

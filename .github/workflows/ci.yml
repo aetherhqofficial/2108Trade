@@ -105,6 +105,24 @@ jobs:
           load: false
           cache-from: type=gha,scope=web
           cache-to: type=gha,scope=web,mode=max
+      - name: Build AI service image
+        uses: docker/build-push-action@v6
+        with:
+          context: services/ai
+          file: services/ai/Dockerfile
+          push: false
+          load: false
+          cache-from: type=gha,scope=ai-service
+          cache-to: type=gha,scope=ai-service,mode=max
+      - name: Build Quant service image
+        uses: docker/build-push-action@v6
+        with:
+          context: services/quant
+          file: services/quant/Dockerfile
+          push: false
+          load: false
+          cache-from: type=gha,scope=quant-service
+          cache-to: type=gha,scope=quant-service,mode=max
 
   # ── Docker Compose Smoke Test ────────────────────────────────────────
   compose-smoke-test:
